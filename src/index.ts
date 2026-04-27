@@ -20,6 +20,8 @@ const botClient = new BotClient(
       GatewayIntentBits.GuildPresences,
       GatewayIntentBits.GuildMembers,
       GatewayIntentBits.GuildMessageReactions,
+      GatewayIntentBits.GuildMessages,
+      GatewayIntentBits.MessageContent,
     ],
     // Partials нужны для обработки реакций на старые (незакешированные) сообщения
     partials: [

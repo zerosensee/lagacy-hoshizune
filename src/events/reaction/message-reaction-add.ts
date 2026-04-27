@@ -42,12 +42,20 @@ export default new Event(
 
     if (!emojiId) return;
 
+    // Find guild in database to get internal UUID
+    const dbGuild = await botClient.database.guild.findUnique({
+      where: { discordId: guild.id },
+      select: { id: true },
+    });
+
+    if (!dbGuild) return;
+
     // Find reaction role message in database
     const reactionRoleMessage =
       await botClient.database.reactionRoleMessage.findUnique({
         where: {
           guildId_channelId_messageId: {
-            guildId: guild.id,
+            guildId: dbGuild.id,
             channelId: reaction.message.channelId,
             messageId: reaction.message.id,
           },

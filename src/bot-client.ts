@@ -6,6 +6,7 @@ import { CommandsHandler, EventsHandler } from '@/handlers';
 import { createLogger, env } from '@/utils';
 
 import { Database } from './services';
+import { StatsService } from './services/stats.service';
 
 export class BotClient extends Client<true> {
   public readonly logger = createLogger('client');
@@ -18,6 +19,7 @@ export class BotClient extends Client<true> {
 
   public readonly database: Database;
   public readonly nekosBest: NekosBest;
+  public readonly statsService: StatsService;
 
   public constructor(
     options: ClientOptions,
@@ -28,6 +30,7 @@ export class BotClient extends Client<true> {
 
     this.database = database;
     this.nekosBest = nekosBest;
+    this.statsService = new StatsService(this);
   }
 
   public async startRest(): Promise<void> {
@@ -60,6 +63,9 @@ export class BotClient extends Client<true> {
 
     this.logger.info('🔧 Commands preparing');
     await CommandsHandler.prepare(this);
+
+    this.logger.info('📊 Stats service starting');
+    await this.statsService.startDailyReporting();
 
     await this.login(env.getOrThrow('DISCORD_BOT_TOKEN'));
   }

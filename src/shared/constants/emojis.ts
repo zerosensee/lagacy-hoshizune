@@ -21,4 +21,6 @@ export const EMOJIS = {
   GITHUB: '<:github:1377060168507986061>',
   DISCORDJS: '<:discordjs:1377061390367326281>',
   TYPESCRIPT: '<:typescript:1377059638599749703>',
+  CPU: '<:cpu:1377061691740655736>',
+  CHART: '📊',
 };

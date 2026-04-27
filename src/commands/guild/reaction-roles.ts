@@ -10,6 +10,7 @@ import {
   InteractionContextType,
   InteractionResponse,
   Message,
+  MessageFlags,
   ModalBuilder,
   PermissionFlagsBits,
   SlashCommandBuilder,
@@ -46,12 +47,13 @@ export default class ReactionRolesCommand extends SlashCommand {
     botClient: BotClient,
     interaction: ChatInputCommandInteraction,
   ): Promise<InteractionResponse | void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
-    if (!interaction.inGuild()) return;
+    if (!interaction.inGuild() || !interaction.guild) return;
+    const { guild } = interaction;
 
     const channelIdRaw =
-      interaction.options.getString('channel_id', true) ?? '';
+      interaction.options.getString('channel_id') ?? '';
     const targetChannelId = channelIdRaw.replace(/\D/g, '');
 
     if (!targetChannelId) {
@@ -59,7 +61,7 @@ export default class ReactionRolesCommand extends SlashCommand {
       return;
     }
 
-    const targetChannel = await interaction.guild.channels
+    const targetChannel = await guild.channels
       .fetch(targetChannelId)
       .catch(() => null);
 
@@ -97,7 +99,7 @@ export default class ReactionRolesCommand extends SlashCommand {
 
     let managedMessage = await getManagedMessage(
       botClient,
-      interaction.guild,
+      guild,
       existing?.channelId,
       existing?.messageId,
     );
@@ -129,13 +131,13 @@ export default class ReactionRolesCommand extends SlashCommand {
 
     await this.syncReactionRoleMessage(
       botClient,
-      interaction.guild,
+      guild,
       managedMessage,
       toMappingsRecord(saved.mappings),
     );
 
-    const roles = interaction.guild.roles.cache
-      .filter((role) => !role.managed && role.id !== interaction.guild!.id)
+    const roles = guild.roles.cache
+      .filter((role) => !role.managed && role.id !== guild.id)
       .sort((a, b) => b.position - a.position)
       .toJSON();
 
@@ -181,7 +183,7 @@ export default class ReactionRolesCommand extends SlashCommand {
     collector.on('collect', async (buttonInteraction) => {
       if (buttonInteraction.user.id !== interaction.user.id) {
         await buttonInteraction.reply({
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
           content: 'Эта панель принадлежит другому модератору.',
         });
         return;
@@ -208,10 +210,10 @@ export default class ReactionRolesCommand extends SlashCommand {
       }
 
       const roleId = value;
-      const role = interaction.guild?.roles.cache.get(roleId);
+      const role = guild.roles.cache.get(roleId);
       if (!role) {
         await buttonInteraction.reply({
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
           content: 'Роль не найдена (возможно удалена).',
         });
         return;
@@ -251,7 +253,7 @@ export default class ReactionRolesCommand extends SlashCommand {
 
       if (!parsedEmoji) {
         await modalInteraction.reply({
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
           content:
             'Неверный emoji. Используй Unicode (🎮) или custom формат `<:name:id>`.',
         });
@@ -275,7 +277,7 @@ export default class ReactionRolesCommand extends SlashCommand {
 
       let targetMessage = await getManagedMessage(
         botClient,
-        interaction.guild!,
+        guild,
         updated.channelId,
         updated.messageId,
       );
@@ -296,13 +298,13 @@ export default class ReactionRolesCommand extends SlashCommand {
 
       await this.syncReactionRoleMessage(
         botClient,
-        interaction.guild!,
+        guild,
         targetMessage,
         toMappingsRecord(updated.mappings),
       );
 
       await modalInteraction.reply({
-        ephemeral: true,
+        flags: [MessageFlags.Ephemeral],
         content: `Сохранено: ${parsedEmoji.display} -> ${role}`,
       });
     });
